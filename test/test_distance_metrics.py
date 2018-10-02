@@ -90,7 +90,6 @@ class TestDistanceMetrics(unittest.TestCase):
 
         # Example (Hand Calculated Result)
         self.assertEqual(chisqr(self.chi_vector_1, self.chi_vector_2), 0.12171612389003691)
-        pass
 
     def test_pearson(self):
         # 0 Correlation Example

@@ -1,5 +1,4 @@
 # Made To Operate On Two Vectors
-# TODO - Make Versions That Finds Distance Between Two Lists Of Vectors
 import numpy as np
 
 
@@ -16,6 +15,11 @@ def manhattan(vector_1, vector_2):
     absolute_diff = np.abs(difference)
     distance = np.sum(absolute_diff)
     return distance
+
+
+# Hamming Distance
+def hamming(vector_1, vector_2):
+    return np.sum(vector_1 != vector_2)
 
 
 # Cosine Distance aka 1-Cosine Similarity
@@ -71,6 +75,4 @@ def chisqr(vector_1, vector_2):
     return chisqr
 
 
-# Hamming Distance
-def hamming(vector_1, vector_2):
-    return np.sum(vector_1 != vector_2)
+
