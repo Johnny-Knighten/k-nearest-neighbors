@@ -4,15 +4,18 @@ import numpy as np
 
 # Euclidean Distance aka L2-Norm
 def euclidean(vectors_a, vectors_b):
-    return np.sqrt(np.sum(np.square(vectors_a-vectors_b[:, np.newaxis]), axis=2))
+    return np.sqrt(np.sum(np.square(vectors_b), axis=1)[:, np.newaxis] + np.sum(np.square(vectors_a), axis=1) -
+                   2*np.dot(vectors_b, vectors_a.T))
 
 
 # Manhattan Distance aka L1-Norm
+# Warning - Broadcasting Takes Huge Memory Requirements
 def manhattan(vectors_a, vectors_b):
     return np.sum(np.abs(vectors_a-vectors_b[:, np.newaxis]), axis=2)
 
 
 # Hamming Distance
+# Warning - Broadcasting Takes Huge Memory Requirements
 def hamming(vectors_a, vectors_b):
     return np.sum(np.abs(vectors_a != vectors_b[:, np.newaxis]), axis=2)
 
@@ -26,6 +29,7 @@ def cosine(vectors_a, vectors_b):
                     out=np.full([vectors_a.shape[0], vectors_b.shape[0]], np.nan), where=(norms_a_cross_norms_b != 0))
     return 1-sim.T
 
+
 # Pearson Distance aka 1-Correlation
 def pearson(vectors_a, vectors_b):
     mean_removed_a = (vectors_a-np.mean(vectors_a, axis=1)[:, np.newaxis])
@@ -37,7 +41,9 @@ def pearson(vectors_a, vectors_b):
                             out=np.zeros((vectors_a.shape[0], vectors_b.shape[0])), where=(std_dev_crossed != 0))
     return 1-correlation.T
 
+
 # Chi-Square Statistic - Treat The Two Vectors As A Two Way Contingency Table
+# Warning - Broadcasting Takes Huge Memory Requirements
 def chisqr(vectors_a, vectors_b):
     all_col_sum = vectors_a + vectors_b[:, np.newaxis]
     all_col_sum_recip = np.reciprocal(all_col_sum, where=(all_col_sum != 0.0))
