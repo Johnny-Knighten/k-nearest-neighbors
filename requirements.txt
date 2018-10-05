@@ -1,6 +1,7 @@
 appnope==0.1.0
 backcall==0.1.0
 bleach==2.1.4
+Cython==0.28.5
 decorator==4.3.0
 defusedxml==0.5.0
 entrypoints==0.2.3
@@ -17,6 +18,7 @@ jupyter-client==5.2.3
 jupyter-console==5.2.0
 jupyter-core==4.4.0
 MarkupSafe==1.0
+memory-profiler==0.54.0
 mistune==0.8.3
 nbconvert==5.4.0
 nbformat==4.4.0
@@ -28,6 +30,7 @@ pexpect==4.6.0
 pickleshare==0.7.4
 prometheus-client==0.3.1
 prompt-toolkit==1.0.15
+psutil==5.4.7
 ptyprocess==0.6.0
 Pygments==2.2.0
 python-dateutil==2.7.3

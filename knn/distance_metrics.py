@@ -1,78 +1,50 @@
-# Made To Operate On Two Vectors
+# Made To Operate On Two Sets of Vectors
 import numpy as np
+
+from knn.non_broadcast_distance_metrics import manhattan_dist, hamming_dist, chisqr_dist
 
 
 # Euclidean Distance aka L2-Norm
-def euclidean(vector_1, vector_2):
-    difference = vector_1-vector_2
-    distance = np.sqrt(np.dot(difference, difference))
-    return distance
+def euclidean(vectors_a, vectors_b):
+    return np.sqrt(np.sum(np.square(vectors_b), axis=1)[:, np.newaxis] + np.sum(np.square(vectors_a), axis=1) -
+                   2*np.dot(vectors_b, vectors_a.T))
 
 
 # Manhattan Distance aka L1-Norm
-def manhattan(vector_1, vector_2):
-    difference = vector_1-vector_2
-    absolute_diff = np.abs(difference)
-    distance = np.sum(absolute_diff)
-    return distance
+# Uses Cython Function To Avoid High Memory Usage From Broadcasting
+def manhattan(vectors_a, vectors_b):
+    return manhattan_dist(vectors_a, vectors_b)
 
 
 # Hamming Distance
-def hamming(vector_1, vector_2):
-    return np.sum(vector_1 != vector_2)
+# Uses Cython Function To Avoid High Memory Usage From Broadcasting
+def hamming(vectors_a, vectors_b):
+    return hamming_dist(vectors_a, vectors_b)
 
 
 # Cosine Distance aka 1-Cosine Similarity
-def cosine(vector_1, vector_2):
-    dot_prob = np.dot(vector_1, vector_2)
-    vector_1_norm = np.sqrt(np.dot(vector_1, vector_1))
-    vector_2_norm = np.sqrt(np.dot(vector_2, vector_2))
-
-    # Cosine Similarity Is Undefined When A Vector Is All Zeros
-    if vector_1_norm == 0 or vector_2_norm == 0:
-        return np.nan
-
-    cosine_sim = dot_prob/(vector_1_norm*vector_2_norm)
-    return 1-cosine_sim
+def cosine(vectors_a, vectors_b):
+    norms_a = np.sqrt(np.sum(np.square(vectors_a), axis=1))
+    norms_b = np.sqrt(np.sum(np.square(vectors_b), axis=1))
+    norms_a_cross_norms_b = np.outer(norms_a, norms_b)
+    sim = np.divide(np.dot(vectors_a, vectors_b.T), norms_a_cross_norms_b,
+                    out=np.full([vectors_a.shape[0], vectors_b.shape[0]], np.nan), where=(norms_a_cross_norms_b != 0))
+    return 1-sim.T
 
 
-# Pearson Distance Between Two Vectors
-def pearson(vector_1, vector_2):
-    vector_1_centered = vector_1-np.mean(vector_1)
-    vector_2_centered = vector_2-np.mean(vector_2)
-    vector_1_stddev = np.sqrt(np.dot(vector_1_centered, vector_1_centered))
-    vector_2_stddev = np.sqrt(np.dot(vector_2_centered, vector_2_centered))
-    covariance = np.dot(vector_1_centered, vector_2_centered)
-
-    # 0 Correlation If A Standard Deviation Is 0
-    if vector_1_stddev == 0 or vector_2_stddev == 0:
-        return 1
-
-    correlation = covariance/(vector_1_stddev*vector_2_stddev)
-    return 1-correlation
+# Pearson Distance aka 1-Correlation
+def pearson(vectors_a, vectors_b):
+    mean_removed_a = (vectors_a-np.mean(vectors_a, axis=1)[:, np.newaxis])
+    mean_removed_b = (vectors_b-np.mean(vectors_b, axis=1)[:, np.newaxis])
+    std_dev_train = np.sqrt(np.sum(np.square(mean_removed_a), axis=1))
+    std_dev_test = np.sqrt(np.sum(np.square(mean_removed_b), axis=1))
+    std_dev_crossed = np.outer(std_dev_train, std_dev_test)
+    correlation = np.divide(np.dot(mean_removed_a, mean_removed_b.T), std_dev_crossed,
+                            out=np.zeros((vectors_a.shape[0], vectors_b.shape[0])), where=(std_dev_crossed != 0))
+    return 1-correlation.T
 
 
-# Treat The Two Vectors As A Two Way Contingency Table
-# Suitable For Non-Negative Data Such As Histograms
-# See: "A Recent Advance in Data Analysis: Clustering Objects into Classes Characterized by Conjunctive Concepts"
-#       Michalski, R. S. et al.
-#       http://mars.gmu.edu/jspui/handle/1920/1556?show=full
-# See: https://stats.stackexchange.com/questions/184101/comparing-two-histograms-using-chi-square-distance
-def chisqr(vector_1, vector_2):
-    col_sums = vector_1 + vector_2
-    col_sums_recip = np.reciprocal(col_sums, where=(col_sums != 0.0))
-    vector_1_sum = np.sum(vector_1)
-    vector_2_sum = np.sum(vector_2)
-
-    if vector_1_sum == 0. or vector_2_sum == 0.:
-        return np.nan
-
-    rel_freq_vector_1 = vector_1/vector_1_sum
-    rel_freq_vector_2 = vector_2/vector_2_sum
-    diff_rel_freq = rel_freq_vector_1-rel_freq_vector_2
-    diff_rel_freq_square = np.square(diff_rel_freq)
-    chisqr = np.sqrt(np.dot(col_sums_recip, diff_rel_freq_square))
-    return chisqr
-
-
-
+# Chi-Square Statistic - Treat The Two Vectors As A Two Way Contingency Table
+# Uses Cython Function To Avoid High Memory Usage From Broadcasting
+def chisqr(vectors_a, vectors_b):
+    return chisqr_dist(vectors_a, vectors_b)

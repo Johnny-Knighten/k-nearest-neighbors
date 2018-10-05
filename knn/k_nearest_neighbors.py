@@ -1,5 +1,6 @@
 import numpy as np
-import knn.vectorized_distance_metrics as dm
+import knn.distance_metrics as dm
+
 
 
 class KNNClassification:
@@ -8,7 +9,7 @@ class KNNClassification:
         self.k = k
         self.tree = tree
 
-        if metric == callable(metric):
+        if callable(metric):
             self.metric = metric
         else:
             metrics = {"euclidean": dm.euclidean,
@@ -42,7 +43,6 @@ class KNNClassification:
 
     def _brute_force_knn(self, test_data, distances=False):
         distance_matrix = self.metric(self.train_data, test_data)
-        print("Finished Distance Calc")
         k_smallest_ind = np.argpartition(distance_matrix, self.k-1)[:, :self.k]
 
         if distances:

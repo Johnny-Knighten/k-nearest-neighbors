@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from math import sqrt, cos, pi
 
-from knn.distance_metrics import euclidean, manhattan, cosine, pearson, chisqr, hamming
+from knn.non_optimized_distance_metrics import euclidean, manhattan, cosine, pearson, chisqr, hamming
 
 
 class TestDistanceMetrics(unittest.TestCase):

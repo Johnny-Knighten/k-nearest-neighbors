@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from math import sqrt
 
-from knn.vectorized_distance_metrics import euclidean, manhattan, cosine, pearson, hamming, chisqr
+from knn.distance_metrics import euclidean, manhattan, cosine, pearson, hamming, chisqr
 
 
 class TestVectorizedDistanceMetrics(unittest.TestCase):
@@ -27,13 +27,13 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
                                            self.two_twenty_five_degree_2_dim, self.three_fifteen_degree_2_dim])
 
         # Bit Strings For Hamming Distance
-        self.bs_all_1_len_6 = np.array([1, 1, 1, 1, 1, 1])
-        self.bs_all_0_len_6 = np.array([0, 0, 0, 0, 0, 0])
-        self.bs_1_on_5_off = np.array([1, 0, 0, 0, 0, 0])
-        self.bs_2_on_4_off = np.array([1, 1, 0, 0, 0, 0])
-        self.bs_3_on_3_off = np.array([1, 1, 1, 0, 0, 0])
-        self.bs_4_on_2_off = np.array([1, 1, 1, 1, 0, 0])
-        self.bs_5_on_1_off = np.array([1, 1, 1, 1, 1, 0])
+        self.bs_all_1_len_6 = np.array([1, 1, 1, 1, 1, 1], dtype=np.float)
+        self.bs_all_0_len_6 = np.array([0, 0, 0, 0, 0, 0], dtype=np.float)
+        self.bs_1_on_5_off = np.array([1, 0, 0, 0, 0, 0], dtype=np.float)
+        self.bs_2_on_4_off = np.array([1, 1, 0, 0, 0, 0], dtype=np.float)
+        self.bs_3_on_3_off = np.array([1, 1, 1, 0, 0, 0], dtype=np.float)
+        self.bs_4_on_2_off = np.array([1, 1, 1, 1, 0, 0], dtype=np.float)
+        self.bs_5_on_1_off = np.array([1, 1, 1, 1, 1, 0], dtype=np.float)
 
         self.test_bs_vectors = np.array([self.bs_all_1_len_6, self.bs_all_0_len_6])
         self.train_bs_vectors = np.array([self.bs_1_on_5_off, self.bs_2_on_4_off, self.bs_3_on_3_off,
