@@ -1,5 +1,5 @@
 import numpy as np
-from knn.k_nearest_neighbors import KNNClassification
+from knn.k_nearest_neighbors import KNNClassification, KNNRegression
 
 
 '''
@@ -38,8 +38,6 @@ test_data = test_data[:20000, 1:].astype(np.float)
 train_labels = train_data[:60000, 0]
 train_data = train_data[:60000, 1:].astype(np.float)
 
-print(type(test_data.shape[0]))
-
 # Create and Train Classifier
 knn = KNNClassification(k=5, metric="manhattan")
 knn.train(train_labels, train_data)
@@ -52,10 +50,11 @@ print("Predicted Labels:\n" + str(predictions))
 
 accuracy = sum(test_labels == predictions)/test_labels.size
 print("Accuracy: " + str(accuracy))
-#
-# '''
-# Using A Distance Metric From Another Package
-# '''
+
+
+'''
+Using A Distance Metric From Another Package
+'''
 from scipy.spatial import distance
 
 train_data = np.array([[1., 2., 3.],
@@ -65,7 +64,6 @@ train_labels = np.array([0, 1, 1])
 
 test_data = np.array([[5., 10., 15.],
                       [10., 20., 30.]])
-
 
 # Needed To Swap Input Order And Set Metric Argument
 def scipy_cityblock(vectors_a, vectors_b):
@@ -83,3 +81,29 @@ print("Predicted Labels:\n" + str(predictions))
 
 accuracy = sum(test_labels == predictions)/test_labels.size
 print("Accuracy: " + str(accuracy))
+
+
+'''
+Million Song Dataset(MSD) Regression
+'''
+msd_data = np.load('./sample_data/msd/msd_data.npz')
+
+train_data = msd_data['train_data']
+train_response = train_data[:600000, 0]
+train_data = train_data[:600000, 1:]
+
+test_data = msd_data['test_data']
+test_response = test_data[:500, 0]
+test_data = test_data[:500, 1:]
+
+knn = KNNRegression(k=35, metric="manhattan")
+knn.train(train_response, train_data)
+
+# Get Predictions
+predicted_response = knn.predict(test_data)
+
+print("Actual Response:\n" + str(test_response[:20]))
+print("Predicted Response:\n" + str(predicted_response[:20]))
+
+error = np.sqrt(np.mean(np.square(test_response-predicted_response)))
+print("Root Mean Square Error: " + str(error))
