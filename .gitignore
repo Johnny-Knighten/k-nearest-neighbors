@@ -154,6 +154,7 @@ knn_env/*
 # Ignore Raw Data Files
 *.csv
 *.npz
+*.txt
 
 
 

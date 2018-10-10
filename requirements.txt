@@ -1,6 +1,7 @@
 appnope==0.1.0
 backcall==0.1.0
 bleach==2.1.4
+cycler==0.10.0
 Cython==0.28.5
 decorator==4.3.0
 defusedxml==0.5.0
@@ -17,7 +18,9 @@ jupyter==1.0.0
 jupyter-client==5.2.3
 jupyter-console==5.2.0
 jupyter-core==4.4.0
+kiwisolver==1.0.1
 MarkupSafe==1.0
+matplotlib==3.0.0
 memory-profiler==0.54.0
 mistune==0.8.3
 nbconvert==5.4.0
@@ -33,6 +36,7 @@ prompt-toolkit==1.0.15
 psutil==5.4.7
 ptyprocess==0.6.0
 Pygments==2.2.0
+pyparsing==2.2.2
 python-dateutil==2.7.3
 pyzmq==17.1.2
 qtconsole==4.4.1
