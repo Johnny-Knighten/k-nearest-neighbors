@@ -1,8 +1,11 @@
 import numpy as np
 import knn.distance_metrics as dm
 import heapq
+import math
 
 from collections import Counter
+
+from knn.ball_tree_queries import query_ball_tree_cyth
 
 
 # Wrapper Over heapq
@@ -45,31 +48,33 @@ class KNNMixin:
 
         return k_smallest_ind
 
-    def _create_ball_tree(self, data, leaf_size):
+    def _create_ball_tree(self, data, leaf_size, centroids, index):
+
 
         if data.shape[0] <= leaf_size:
             leaf_node = {}
-            leaf_node["center"] = np.mean(data, axis=0)[np.newaxis, :]
-            leaf_node["radius"] = np.max(self.metric(data, leaf_node["center"]))
+            leaf_node["center"] = np.mean(data[:, 1:], axis=0)[np.newaxis, :]
+            centroids[index, :] = leaf_node["center"] # New
+            leaf_node["radius"] = np.max(self.metric(data[:, 1:], leaf_node["center"]))
             leaf_node["data"] = data
             return leaf_node
 
         # Random Point x0
         rand_index = np.random.choice(data.shape[0], 1, replace=False)
-        rand_point = data[rand_index, :]
+        rand_point = data[rand_index, 1:]
 
         # Find Maximal Point x1
-        distances = self.metric(data, rand_point)
+        distances = self.metric(data[:, 1:], rand_point)
         ind_of_max_dist = np.argmax(distances)
-        max_vector_1 = data[ind_of_max_dist, :]
+        max_vector_1 = data[ind_of_max_dist, 1:]
 
         # Find Maximal Point x2
-        distances = self.metric(data, max_vector_1[np.newaxis, :])
+        distances = self.metric(data[:, 1:], max_vector_1[np.newaxis, :])
         ind_of_max_dist = np.argmax(distances)
-        max_vector_2 = data[ind_of_max_dist, :]
+        max_vector_2 = data[ind_of_max_dist, 1:]
 
         # Project Data
-        proj_data = data.dot(max_vector_1-max_vector_2)
+        proj_data = data[:, 1:].dot(max_vector_1-max_vector_2)
 
         # Find Median And Split Data
         median_ind = np.argpartition(proj_data, proj_data.size//2)
@@ -77,44 +82,22 @@ class KNNMixin:
         greater_than_med_inds = median_ind[proj_data.size//2:]
 
         # Create Circle
-        center = np.mean(data, axis=0)
-        radius = np.max(self.metric(data, center[np.newaxis, :]))
+        center = np.mean(data[:, 1:], axis=0)
+        radius = np.max(self.metric(data[:, 1:], center[np.newaxis, :]))
+
+        left_index = 2 * index + 1
+        right_index = left_index + 1
 
         internal_node = {}
         internal_node["center"] = center[np.newaxis, :]
+        centroids[index, :] = internal_node["center"] # New
         internal_node["radius"] = radius
-        internal_node["left_child"] = self._create_ball_tree(data[lower_than_med_inds], leaf_size)
-        internal_node["right_child"] = self._create_ball_tree(data[greater_than_med_inds], leaf_size)
+        internal_node["left_child"] = self._create_ball_tree(data[lower_than_med_inds], leaf_size, centroids, left_index)
+        internal_node["right_child"] = self._create_ball_tree(data[greater_than_med_inds], leaf_size, centroids, right_index)
 
         return internal_node
 
-    def _query_ball_tree(self, target_vect, k, queue, curr_node):
 
-        # Prune This Ball
-        if self.metric(target_vect, curr_node["center"]) - curr_node["radius"] >= queue.peektop()[0]:
-            return queue
-
-        # Currently A Leaf Node
-        if "data" in curr_node:
-            for point in curr_node["data"]:
-                dist = np.asscalar(self.metric(target_vect, point[np.newaxis, :]))
-                if dist < queue.peektop()[0]:
-                    queue.heappushpop(dist, point)
-
-        # Not Leaf So Explore Children
-        else:
-            child1 = curr_node["left_child"]
-            child2 = curr_node["right_child"]
-
-            child1_dist = self.metric(child1["center"], target_vect)
-            child2_dist = self.metric(child2["center"], target_vect)
-
-            if child1_dist < child2_dist:
-                self._query_ball_tree(target_vect, k, queue, child1)
-                self._query_ball_tree(target_vect, k, queue, child2)
-            else:
-                self._query_ball_tree(target_vect, k, queue, child2)
-                self._query_ball_tree(target_vect, k, queue, child1)
 
 
 class KNNClassification(KNNMixin):
@@ -147,19 +130,29 @@ class KNNClassification(KNNMixin):
 
         # Build Tree - Not Implemented Yet
         if self.tree:
-            self.ball_tree = self._create_ball_tree(train_data, self.tree_leaf_size)
+            numb_of_leafs = math.ceil(train_data.shape[0] / self.tree_leaf_size)
+            tree_height = 1 + math.ceil(np.log2(numb_of_leafs))
+            numb_of_nodes = int(2 ** tree_height) - 1
+            self.centroids = np.zeros((numb_of_nodes, self.train_data.shape[1]))
+            train_data_with_inds = np.hstack((np.arange(self.train_data.shape[0])[:, np.newaxis], self.train_data))
+            self.ball_tree = self._create_ball_tree(train_data_with_inds, self.tree_leaf_size, self.centroids, 0)
 
     def predict(self, test_data):
 
         if self.tree:
+
+            centroid_dists = self.metric(self.centroids, test_data)
+
+
             output_labels = []
-            for test_vector in test_data:
+            for i, test_vector in enumerate(test_data):
                 queue = PriorityQueue(False)
                 # Fill queue With High Distance Points
                 list(map(lambda x: queue.heappush(9e10, np.array([9e10, 9e10])), range(self.k)))
-                self._query_ball_tree(test_vector[np.newaxis, :], self.k, queue, self.ball_tree)
-                nn_points = np.array([x[2] for x in queue.queue])[:, np.newaxis]
-                predicted_labels = self.labels[np.where((self.train_data == nn_points).all(-1))[1]]
+                query_ball_tree_cyth(test_vector[np.newaxis, :], self.k, queue, self.ball_tree, centroid_dists[i, :], 0, self.metric)
+                nn_points = np.array([x[2][0] for x in queue.queue], dtype=np.int)
+
+                predicted_labels = self.labels[nn_points]
                 output_labels.append(np.bincount(predicted_labels).argmax())
             return np.array(output_labels)
 
@@ -204,12 +197,13 @@ class KNNRegression(KNNMixin):
     def predict(self, test_data):
 
         if self.tree:
+            centroid_dists = self.metric(self.centroids, test_data)
             output_responses = []
-            for test_vector in test_data:
+            for i, test_vector in enumerate(test_data):
                 queue = PriorityQueue(False)
                 # Fill queue With High Distance Points
                 list(map(lambda x: queue.heappush(9e10, np.array([9e10, 9e10])), range(self.k)))
-                self._query_ball_tree(test_vector[np.newaxis, :], self.k, queue, self.ball_tree)
+                self._query_ball_tree(test_vector[np.newaxis, :], self.k, queue, self.ball_tree, centroid_dists[i, :], 0, self.metric)
                 nn_points = np.array([x[2] for x in queue.queue])[:, np.newaxis]
                 predicted_responses = self.train_response[np.where((self.train_data == nn_points).all(-1))[1]]
                 output_responses.append(np.mean(predicted_responses))
