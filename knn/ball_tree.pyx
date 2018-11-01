@@ -2,6 +2,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import math
+from libc.math cimport sqrt
 from knn.distance_metrics import euclidean
 
 cdef class BallTree:
@@ -9,7 +10,9 @@ cdef class BallTree:
     cdef readonly double[:, ::1] data_view
     cdef readonly long[::1] data_inds_view
     cdef np.ndarray data
-    cdef np.ndarray data_inds
+    cdef public np.ndarray data_inds
+
+    cdef double[:,::1] query_data_view
 
     cdef public np.ndarray node_data_inds
     cdef public np.ndarray node_radius
@@ -23,6 +26,10 @@ cdef class BallTree:
     cdef int leaf_size
     cdef int node_count
     cdef int tree_height
+
+    cdef public np.ndarray heap
+    cdef public double[:,::1] heap_view
+    cdef public np.ndarray heap_inds
 
     def __init__(self, data, leaf_size):
 
@@ -63,63 +70,63 @@ cdef class BallTree:
             self.node_center[node_index] = np.mean(self.data[self.data_inds[node_data_start:node_data_end+1]], axis=0)
 
             self.node_radius[node_index] = np.max(euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]],
-                                                            self.node_center[node_index, :][np.newaxis, :]))
+                                                            self.node_center[node_index,  :][np.newaxis, :]))
 
             self.node_data_inds[node_index, 0] = node_data_start
             self.node_data_inds[node_index, 1] = node_data_end
 
             self.node_is_leaf[node_index] = True
-
             return None
 
         #################################
         # Current Node Is Internal Node #
         #################################
 
-        # Select Random Point
+        # Select Random Point -  x0
         rand_index = np.random.choice(node_data_end-node_data_start+1, 1, replace=False)
         rand_point = self.data[self.data_inds[rand_index], :]
 
-        # Find Point Max Distance From Random Point
+        # Find Point Farthest Away From x0 - x1
         distances = euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], rand_point)
         ind_of_max_dist = np.argmax(distances)
         max_vector_1 = self.data[ind_of_max_dist]
 
-        # Find Point Max Distance From Previous Point
+        # Find Point Farthest Away From x1 - x2
         distances = euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], max_vector_1[np.newaxis, :])
         ind_of_max_dist = np.argmax(distances)
         max_vector_2 = self.data[ind_of_max_dist]
 
-        # Project Data On Vector Between Previous Two Points
+        # Project Data On Vector Between x1 and x2
         proj_data = np.dot(self.data[self.data_inds[node_data_start:node_data_end+1]], max_vector_1-max_vector_2)
 
-
-        # Find Median
+        # Find Median Of Projected Data
         median = np.partition(proj_data, proj_data.size//2)[proj_data.size//2]
 
-        # Partition Data Around Median - Currently Using Hoare Partitioning
+        # Split Data Around Median Using Hoare Partitioning
         low = node_data_start
         high = node_data_end
         pivot = median
         self._hoare_partition(pivot, low, high, proj_data)
 
-        # Set Info About Current Ball
+        # Create Circle
         center = np.mean(self.data[self.data_inds[node_data_start:node_data_end+1]], axis=0)
         radius = np.max(euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], center[np.newaxis, :]))
-        self.node_radius[node_index] = radius
-        self.node_center[node_index] = center
+
         self.node_data_inds[node_index, 0] = node_data_start
         self.node_data_inds[node_index, 1] = node_data_end
+
+        self.node_radius[node_index] = radius
+        self.node_center[node_index] = center
+
         self.node_is_leaf[node_index] = False
 
-        # Keep Generating Tree
+        # Build Children Circles
         left_index = 2 * node_index + 1
         right_index = left_index + 1
         self._build(left_index, node_data_start,  node_data_start+ (proj_data.size//2)-1 )
         self._build(right_index, node_data_start+(proj_data.size//2),   node_data_end)
 
-
-    def _hoare_partition(self, pivot, low, high, projected_data):
+    cdef int _hoare_partition(self, pivot, low, high, projected_data):
 
         i = low - 1
         j = high + 1
@@ -143,9 +150,146 @@ cdef class BallTree:
                 condition = projected_data[j2] > pivot
 
             # Time To End Algorithm
-            if i >= j:
-                return None
+            if (i >= j):
+                return j
 
             # Swap Values
             projected_data[i2], projected_data[j2] = projected_data[j2], projected_data[i2]
             self.data_inds[i], self.data_inds[j] = self.data_inds[j], self.data_inds[i]
+
+
+    # TODO - Update All Distance Metrics And Move To Separate File
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef double euclid(self, double[::1] vector1, double[::1] vector2):
+
+        cdef double distance = 0.0
+        cdef int dims = vector1.shape[0]
+        cdef double temp
+        cdef size_t i
+
+        for i in range(0, dims):
+            temp = vector1[i] - vector2[i]
+            distance += (temp*temp)
+
+        return sqrt(distance)
+
+
+
+    def query(self, query_data, k):
+
+        self.heap = np.full((query_data.shape[0], k), np.inf)
+        self.heap_view = memoryview(self.heap)
+        self.heap_inds = np.zeros((query_data.shape[0], k))
+
+        query_data = query_data.astype(np.float)
+        self.query_data_view = memoryview(query_data)
+
+        cdef size_t i
+        initial_center = self.node_center_view[0]
+        for i in range(0, query_data.shape[0]):
+            dist = self.euclid(initial_center, self.query_data_view[i])
+            self._query(i, dist, 0, self.query_data_view[i])
+
+        return None
+
+
+    cdef int _query(self, int query_vect_ind, double dist_to_cent, int curr_node, double[::1] query_data):
+
+        cdef size_t i
+
+        # Prune This Ball
+        if dist_to_cent - self.node_radius_view[curr_node] >= self._heap_peek_head(query_vect_ind):
+            return 0
+
+        # Currently A Leaf Node
+        if self.node_is_leaf_view[curr_node]:
+            inds = self.node_data_inds_view[curr_node]
+            for i in range(inds[0], inds[1]+1):
+                dist = self.euclid(self.data_view[self.data_inds_view[i]], query_data)
+                if dist < self._heap_peek_head(query_vect_ind):
+                    self._heap_pop_push(query_vect_ind, dist, self.data_inds_view[i])
+
+        # Not Leaf So Explore Children
+        else:
+            child1 = 2 * curr_node + 1
+            child2 = child1 + 1
+
+            child1_dist = self.euclid(self.node_center_view[child1], query_data)
+            child2_dist = self.euclid(self.node_center_view[child2], query_data)
+
+            if child1_dist < child2_dist:
+                self._query(query_vect_ind, child1_dist, child1, query_data)
+                self._query(query_vect_ind, child2_dist, child2, query_data)
+            else:
+                self._query(query_vect_ind, child2_dist, child2, query_data)
+                self._query(query_vect_ind, child1_dist, child1, query_data)
+
+        return 0
+
+
+    cdef double _heap_peek_head(self, int level):
+        return self.heap_view[level, 0]
+
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    cdef int _heap_pop_push(self, int level, double value, int index):
+
+        # Put New Value At Head And Remove Old Value
+        self.heap[level, 0] = value
+        self.heap_inds[level, 0] = index
+
+        # Update Heap Structure
+        cdef size_t i, left_ind, right_ind
+        cdef double temp_value
+        cdef int temp_index
+
+        i = 0
+        while True:
+            left_ind = 2 * i + 1
+            right_ind = left_ind + 1
+
+            # Catch Edge Cases Of Indices
+            if left_ind >= self.heap.shape[1]:
+                break
+            elif right_ind >= self.heap.shape[1]:
+                if self.heap_view[level, left_ind] > self.heap_view[level, i]:
+                    temp_value = self.heap[level, i]
+                    self.heap[level, i] = self.heap[level, left_ind]
+                    self.heap[level, left_ind] = temp_value
+
+                    temp_index = self.heap_inds[level, i]
+                    self.heap_inds[level, i] = self.heap_inds[level, left_ind]
+                    self.heap_inds[level, left_ind] = temp_index
+
+                break
+
+            # Determine If We Should Compare With Left or Right Child
+            if self.heap_view[level, left_ind] > self.heap_view[level, right_ind]:
+                if self.heap_view[level, left_ind] > self.heap_view[level, i]:
+                    temp_value = self.heap[level, i]
+                    self.heap[level, i] = self.heap[level, left_ind]
+                    self.heap[level, left_ind] = temp_value
+
+                    temp_index = self.heap_inds[level, i]
+                    self.heap_inds[level, i] = self.heap_inds[level, left_ind]
+                    self.heap_inds[level, left_ind] = temp_index
+                    i = left_ind
+                else:
+                    break
+
+            else:
+                if self.heap_view[level, right_ind] > self.heap_view[level, i]:
+                    temp_value = self.heap[level, i]
+                    self.heap[level, i] = self.heap[level, right_ind]
+                    self.heap[level, right_ind] = temp_value
+
+                    temp_index = self.heap_inds[level, i]
+                    self.heap_inds[level, i] = self.heap_inds[level, right_ind]
+                    self.heap_inds[level, right_ind] = temp_index
+                    i = right_ind
+                else:
+                    break
+
+        return 0

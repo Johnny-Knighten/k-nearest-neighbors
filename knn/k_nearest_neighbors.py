@@ -5,7 +5,7 @@ import math
 
 from collections import Counter
 
-from knn.ball_tree_queries import query_ball_tree_cyth
+#from knn.ball_tree_queries import query_ball_tree_cyth
 
 
 # Wrapper Over heapq
@@ -149,7 +149,7 @@ class KNNClassification(KNNMixin):
                 queue = PriorityQueue(False)
                 # Fill queue With High Distance Points
                 list(map(lambda x: queue.heappush(9e10, np.array([9e10, 9e10])), range(self.k)))
-                query_ball_tree_cyth(test_vector[np.newaxis, :], self.k, queue, self.ball_tree, centroid_dists[i, :], 0, self.metric)
+                #query_ball_tree_cyth(test_vector[np.newaxis, :], self.k, queue, self.ball_tree, centroid_dists[i, :], 0, self.metric)
                 nn_points = np.array([x[2][0] for x in queue.queue], dtype=np.int)
 
                 predicted_labels = self.labels[nn_points]

@@ -127,29 +127,29 @@ from knn.k_nearest_neighbors import KNNClassification, KNNRegression
 '''
 MNIST Classification - Ball Tree
 '''
-# Load Data
-mnist_data = np.load('./sample_data/mnist/mnist_data.npz')
-train_data = mnist_data['train_data']
-test_data = mnist_data['test_data']
-
-# Subset Data If Desired
-test_labels = test_data[:1000, 0]
-test_data = test_data[:1000, 1:].astype(np.float)
-train_labels = train_data[:1000, 0]
-train_data = train_data[:1000, 1:].astype(np.float)
-
-# Create and Train Classifier
-knn = KNNClassification(k=3, metric="manhattan", tree=True, tree_leaf_size=100)
-knn.train(train_labels, train_data)
-
-# Get Predictions
-predictions = knn.predict(test_data)
-
-print("Test Labels:\n" + str(test_labels))
-print("Predicted Labels:\n" + str(predictions))
-
-accuracy = sum(test_labels == predictions)/test_labels.size
-print("Accuracy: " + str(accuracy))
+# # Load Data
+# mnist_data = np.load('./sample_data/mnist/mnist_data.npz')
+# train_data = mnist_data['train_data']
+# test_data = mnist_data['test_data']
+#
+# # Subset Data If Desired
+# test_labels = test_data[:1000, 0]
+# test_data = test_data[:1000, 1:].astype(np.float)
+# train_labels = train_data[:1000, 0]
+# train_data = train_data[:1000, 1:].astype(np.float)
+#
+# # Create and Train Classifier
+# knn = KNNClassification(k=3, metric="manhattan", tree=True, tree_leaf_size=100)
+# knn.train(train_labels, train_data)
+#
+# # Get Predictions
+# predictions = knn.predict(test_data)
+#
+# print("Test Labels:\n" + str(test_labels))
+# print("Predicted Labels:\n" + str(predictions))
+#
+# accuracy = sum(test_labels == predictions)/test_labels.size
+# print("Accuracy: " + str(accuracy))
 
 
 # '''
@@ -176,3 +176,32 @@ print("Accuracy: " + str(accuracy))
 #
 # error = np.sqrt(np.mean(np.square(test_response-predicted_response)))
 # print("Root Mean Square Error: " + str(error))
+
+
+
+from knn.ball_tree import BallTree
+
+mnist_data = np.load('./sample_data/mnist/mnist_data.npz')
+train_data = mnist_data['train_data']
+test_data = mnist_data['test_data']
+
+# Subset Data If Desired
+test_labels = test_data[:1000, 0]
+test_data = test_data[:1000, 1:].astype(np.float)
+train_labels = train_data[:10000, 0]
+train_data = train_data[:10000, 1:].astype(np.float)
+
+tree = BallTree(train_data, 100)
+tree.build_tree()
+
+
+tree.query(test_data, 3)
+
+
+
+
+print("Test Labels:\n" + str(test_labels))
+print("Predicted Labels:\n" + str(train_labels[tree.heap_inds.astype(np.int)]))
+
+#accuracy = sum(test_labels == predictions)/test_labels.size
+#print("Accuracy: " + str(accuracy))
