@@ -1,3 +1,5 @@
+import timeit
+
 import numpy as np
 from knn.k_nearest_neighbors import KNNClassification, KNNRegression
 
@@ -186,10 +188,10 @@ train_data = mnist_data['train_data']
 test_data = mnist_data['test_data']
 
 # Subset Data If Desired
-test_labels = test_data[:1000, 0]
-test_data = test_data[:1000, 1:].astype(np.float)
-train_labels = train_data[:10000, 0]
-train_data = train_data[:10000, 1:].astype(np.float)
+test_labels = test_data[:, 0]
+test_data = test_data[:1000, 1:4].astype(np.float)
+train_labels = train_data[:, 0]
+train_data = train_data[:1000, 1:4].astype(np.float)
 
 tree = BallTree(train_data, 100)
 tree.build_tree()
@@ -200,8 +202,9 @@ tree.query(test_data, 3)
 
 
 
-print("Test Labels:\n" + str(test_labels))
-print("Predicted Labels:\n" + str(train_labels[tree.heap_inds.astype(np.int)]))
+# print("Test Labels:\n" + str(test_labels))
+# print("Predicted Labels:\n" + str(train_labels[tree.heap_inds.astype(np.int)]))
+
 
 #accuracy = sum(test_labels == predictions)/test_labels.size
 #print("Accuracy: " + str(accuracy))

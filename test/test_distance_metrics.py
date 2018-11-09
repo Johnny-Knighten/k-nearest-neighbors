@@ -5,6 +5,8 @@ from math import sqrt, cos, pi
 from knn.non_optimized_distance_metrics import euclidean, manhattan, cosine, pearson, chisqr, hamming
 
 
+
+
 class TestDistanceMetrics(unittest.TestCase):
 
     def setUp(self):
