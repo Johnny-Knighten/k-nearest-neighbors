@@ -3,7 +3,131 @@ import numpy as np
 cimport numpy as np
 import math
 from libc.math cimport sqrt
-from knn.distance_metrics import euclidean
+
+ctypedef double (*metric_func)(double[::1], double[::1])
+ctypedef double[:, ::1] (*pairwise_metric_fun)(double[:, ::1], double[:, ::1])
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double _euclid(double[::1] vector1, double[::1] vector2):
+    cdef double distance = 0.0
+    cdef int dims = vector1.shape[0]
+    cdef double temp
+    cdef size_t i
+
+    for i in range(0, dims):
+        temp = vector1[i] - vector2[i]
+        distance += (temp*temp)
+
+    return sqrt(distance)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double[:, ::1] _euclid_pairwise(double[:, ::1] vectors_a, double[:, ::1] vectors_b):
+    cdef int numb_vectors_a = vectors_a.shape[0]
+    cdef int numb_vectors_b = vectors_b.shape[0]
+    cdef int numb_dims = vectors_a.shape[1]
+    cdef double[:, ::1] distances = np.zeros([numb_vectors_b, numb_vectors_a])
+
+    cdef int i, j, k
+    cdef double distance, temp
+
+    for i in range(numb_vectors_b):
+        for j in range(numb_vectors_a):
+            distance = 0.0
+            for k in range(numb_dims):
+                temp = vectors_a[j, k] - vectors_b[i, k]
+                distance += (temp*temp)
+
+            distances[i, j] = sqrt(distance)
+
+    return distances
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double _manhattan(double[::1] vector1, double[::1] vector2):
+    cdef double distance = 0.0
+    cdef int dims = vector1.shape[0]
+    cdef double temp
+    cdef size_t i
+
+    for i in range(0, dims):
+        temp = abs(vector1[i] - vector2[i])
+        distance += temp
+
+    return distance
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double[:, ::1] _manhattan_pairwise(double[:, ::1] vectors_a, double[:, ::1] vectors_b):
+    cdef int numb_vectors_a = vectors_a.shape[0]
+    cdef int numb_vectors_b = vectors_b.shape[0]
+    cdef int numb_dims = vectors_a.shape[1]
+    cdef double[:, ::1] distances = np.zeros([numb_vectors_b, numb_vectors_a])
+
+    cdef int i, j, k
+    cdef double distance
+    cdef double temp
+
+    for i in range(numb_vectors_b):
+        for j in range(numb_vectors_a):
+            distance = 0.0
+            for k in range(numb_dims):
+                temp = abs(vectors_a[j,k] - vectors_b[i,k])
+                distance += temp
+
+            distances[i, j] = distance
+
+    return distances
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double _hamming(double[::1] vector1, double[::1] vector2):
+
+    cdef double distance = 0.0
+    cdef int dims = vector1.shape[0]
+    cdef size_t i
+
+    for i in range(0, dims):
+        if vector1[i] != vector2[i]:
+            distance += 1.0
+
+    return distance
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cdef inline double[:, ::1] _hamming_pairwise(double[:, ::1] vectors_a, double[:, ::1] vectors_b):
+    cdef int numb_vectors_a = vectors_a.shape[0]
+    cdef int numb_vectors_b = vectors_b.shape[0]
+    cdef int numb_dims = vectors_a.shape[1]
+    cdef double[:, ::1] distances = np.zeros([numb_vectors_b, numb_vectors_a])
+
+    cdef int i, j, k
+    cdef double distance
+    cdef double temp
+
+    for i in range(numb_vectors_b):
+        for j in range(numb_vectors_a):
+            distance = 0.0
+            for k in range(numb_dims):
+                if vectors_a[j,k] != vectors_b[i,k]:
+                    distance += 1.0
+
+            distances[i, j] = distance
+
+    return distances
 
 
 cdef class BallTree:
@@ -33,8 +157,11 @@ cdef class BallTree:
     cdef public np.ndarray heap_inds
     cdef long[:, ::1] heap_inds_view
 
+    cdef metric_func metric
+    cdef pairwise_metric_fun pair_metric
 
-    def __init__(self, data, leaf_size):
+
+    def __init__(self, data, leaf_size, metric="euclidean"):
 
         # Data
         self.data = np.asarray(data, dtype=np.float, order='C')
@@ -59,6 +186,17 @@ cdef class BallTree:
         self.node_center_view = memoryview(self.node_center)
 
 
+        if metric == "manhattan":
+            self.metric = &_manhattan
+            self.pair_metric = &_manhattan_pairwise
+        elif metric == "hamming":
+            self.metric = &_hamming
+            self.pair_metric = &_hamming_pairwise
+        else:
+            self.metric = &_euclid
+            self.pair_metric = &_euclid_pairwise
+
+
     def build_tree(self):
         self._build(0, 0, self.data.shape[0]-1)
 
@@ -72,7 +210,7 @@ cdef class BallTree:
 
             self.node_center[node_index] = np.mean(self.data[self.data_inds[node_data_start:node_data_end+1]], axis=0)
 
-            self.node_radius[node_index] = np.max(euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]],
+            self.node_radius[node_index] = np.max(self.pair_metric(self.data[self.data_inds[node_data_start:node_data_end+1]],
                                                             self.node_center[node_index,  :][np.newaxis, :]))
 
             self.node_data_inds[node_index, 0] = node_data_start
@@ -90,12 +228,12 @@ cdef class BallTree:
         rand_point = self.data[self.data_inds[rand_index], :]
 
         # Find Point Farthest Away From x0 - x1
-        distances = euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], rand_point)
+        distances = self.pair_metric(self.data[self.data_inds[node_data_start:node_data_end+1]], rand_point)
         ind_of_max_dist = np.argmax(distances)
         max_vector_1 = self.data[ind_of_max_dist]
 
         # Find Point Farthest Away From x1 - x2
-        distances = euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], max_vector_1[np.newaxis, :])
+        distances = self.pair_metric(self.data[self.data_inds[node_data_start:node_data_end+1]], max_vector_1[np.newaxis, :])
         ind_of_max_dist = np.argmax(distances)
         max_vector_2 = self.data[ind_of_max_dist]
 
@@ -113,7 +251,7 @@ cdef class BallTree:
 
         # Create Circle
         center = np.mean(self.data[self.data_inds[node_data_start:node_data_end+1]], axis=0)
-        radius = np.max(euclidean(self.data[self.data_inds[node_data_start:node_data_end+1]], center[np.newaxis, :]))
+        radius = np.max(self.pair_metric(self.data[self.data_inds[node_data_start:node_data_end+1]], center[np.newaxis, :]))
 
         self.node_data_inds[node_index, 0] = node_data_start
         self.node_data_inds[node_index, 1] = node_data_end
@@ -165,27 +303,6 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
-    cdef inline double _euclid(self, double[::1] vector1, double[::1] vector2):
-
-        cdef double distance = 0.0
-        cdef int dims = vector1.shape[0]
-        cdef double temp
-        cdef size_t i
-
-        for i in range(0, dims):
-            temp = vector1[i] - vector2[i]
-            distance += (temp*temp)
-
-        return sqrt(distance)
-
-
-    # TODO - Implement Hamming
-    # TODO - Implement Manhattan
-
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    @cython.initializedcheck(False)
     def query(self, query_data, k):
 
         cdef size_t i
@@ -203,7 +320,7 @@ cdef class BallTree:
         initial_center = self.node_center_view[0]
         for i in range(0, numb_query_vectors):
             query_vector = self.query_data_view[i]
-            dist = self._euclid(initial_center, query_vector)
+            dist = self.metric(initial_center, query_vector)
             self._query(i, dist, 0, query_vector)
 
 
@@ -227,7 +344,7 @@ cdef class BallTree:
             for i in range(lower_index, upper_index):
                 curr_index = self.data_inds_view[i]
                 curr_vect = self.data_view[curr_index]
-                dist = self._euclid(curr_vect, query_data)
+                dist = self.metric(curr_vect, query_data)
                 if dist < self._heap_peek_head(query_vect_ind):
                     self._heap_pop_push(query_vect_ind, dist, self.data_inds_view[i])
 
@@ -239,8 +356,8 @@ cdef class BallTree:
             child1_center = self.node_center_view[child1]
             child2_center = self.node_center_view[child2]
 
-            child1_dist = self._euclid(child1_center, query_data)
-            child2_dist = self._euclid(child2_center, query_data)
+            child1_dist = self.metric(child1_center, query_data)
+            child2_dist = self.metric(child2_center, query_data)
 
             if child1_dist < child2_dist:
                 self._query(query_vect_ind, child1_dist, child1, query_data)

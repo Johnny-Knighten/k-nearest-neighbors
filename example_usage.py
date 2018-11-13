@@ -188,16 +188,35 @@ train_data = mnist_data['train_data']
 test_data = mnist_data['test_data']
 
 # Subset Data If Desired
-test_labels = test_data[:, 0]
-test_data = test_data[:1000, 1:4].astype(np.float)
-train_labels = train_data[:, 0]
-train_data = train_data[:1000, 1:4].astype(np.float)
-
-tree = BallTree(train_data, 100)
-tree.build_tree()
+test_labels = test_data[:2000, 0]
+test_data = test_data[:2000, 1:].astype(np.float)
+train_labels = train_data[:2000, 0]
+train_data = train_data[:2000, 1:].astype(np.float)
 
 
-tree.query(test_data, 3)
+knn = KNNClassification(k =5, use_tree=True, tree_leaf_size=10, metric="euclidean")
+knn.train(train_labels, train_data)
+# Get Predictions
+predictions = knn.predict(test_data)
+#print(predictions)
+accuracy = sum(test_labels == predictions)/test_labels.size
+print("Accuracy: " + str(accuracy))
+
+knn2 = KNNClassification(k=5, metric="euclidean")
+knn2.train(train_labels, train_data)
+# Get Predictions
+predictions = knn2.predict(test_data)
+#print(predictions)
+accuracy = sum(test_labels == predictions)/test_labels.size
+print("Accuracy: " + str(accuracy))
+
+#tree = BallTree(train_data, 10)
+#tree.build_tree()
+
+
+#tree.query(test_data, 3)
+
+
 
 
 
