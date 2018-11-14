@@ -194,7 +194,7 @@ train_labels = train_data[:2000, 0]
 train_data = train_data[:2000, 1:].astype(np.float)
 
 
-knn = KNNClassification(k =5, use_tree=True, tree_leaf_size=10, metric="euclidean")
+knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=10, metric="euclidean")
 knn.train(train_labels, train_data)
 # Get Predictions
 predictions = knn.predict(test_data)
@@ -209,6 +209,9 @@ predictions = knn2.predict(test_data)
 #print(predictions)
 accuracy = sum(test_labels == predictions)/test_labels.size
 print("Accuracy: " + str(accuracy))
+
+
+
 
 #tree = BallTree(train_data, 10)
 #tree.build_tree()

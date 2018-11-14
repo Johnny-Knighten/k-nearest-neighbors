@@ -2,11 +2,7 @@ import numpy as np
 import knn.distance_metrics as dm
 from knn.ball_tree import BallTree
 import math
-
-
-
-
-
+import knn.distance_metrics_cython as dmc
 
 
 class KNNMixin:
@@ -17,9 +13,9 @@ class KNNMixin:
         if callable(metric):
             self.metric = metric
         else:
-            metrics = {"euclidean": dm.euclidean,
-                       "manhattan": dm.manhattan,
-                       "hamming": dm.hamming,
+            metrics = {"euclidean": dmc.euclidean_pairwise,
+                       "manhattan": dmc.manhattan_pairwise,
+                       "hamming": dmc.hamming_pairwise,
                        "cosine": dm.cosine,
                        "pearson": dm.pearson,
                        "chisqr": dm.chisqr}
