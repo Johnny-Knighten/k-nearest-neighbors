@@ -2,7 +2,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import math
-from knn.distance_metrics_cython cimport euclidean, _euclidean_pairwise, manhattan, _manhattan_pairwise, hamming,\
+from knn.distance_metrics_cython cimport _euclidean, _euclidean_pairwise, _manhattan, _manhattan_pairwise, _hamming,\
     _hamming_pairwise
 
 ctypedef double (*metric_func)(double[::1], double[::1])
@@ -64,13 +64,13 @@ cdef class BallTree:
         self.node_center_view = memoryview(self.node_center)
 
         if metric == "manhattan":
-            self.metric = manhattan
+            self.metric = _manhattan
             self.pair_metric = _manhattan_pairwise
         elif metric == "hamming":
-            self.metric = hamming
+            self.metric = _hamming
             self.pair_metric = _hamming_pairwise
         else:
-            self.metric = euclidean
+            self.metric = _euclidean
             self.pair_metric = _euclidean_pairwise
 
 
@@ -182,7 +182,7 @@ cdef class BallTree:
     @cython.initializedcheck(False)
     def query(self, query_data, k):
 
-        cdef size_t i
+        cdef int i
         cdef double[::1] query_vector, initial_center
         cdef int numb_query_vectors = query_data.shape[0]
         cdef double dist
@@ -204,9 +204,9 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
-    cdef int _query(self, size_t query_vect_ind, double dist_to_cent, size_t curr_node, double[::1] query_data):
+    cdef int _query(self, int query_vect_ind, double dist_to_cent, int curr_node, double[::1] query_data):
 
-        cdef size_t i, child1, child2, lower_index, upper_index, curr_index
+        cdef int i, child1, child2, lower_index, upper_index, curr_index
         cdef double child1_dist, child2_dist, dist
         cdef double[::1] curr_vect, child1_center, child2_center
 
@@ -248,7 +248,7 @@ cdef class BallTree:
 
     @cython.initializedcheck(False)
     @cython.boundscheck(False)
-    cdef inline double _heap_peek_head(self, size_t level):
+    cdef inline double _heap_peek_head(self, int level):
         return self.heap_view[level, 0]
 
 
@@ -316,4 +316,3 @@ cdef class BallTree:
                     break
 
         return 0
-    

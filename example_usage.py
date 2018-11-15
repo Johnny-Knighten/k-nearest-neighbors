@@ -188,10 +188,10 @@ train_data = mnist_data['train_data']
 test_data = mnist_data['test_data']
 
 # Subset Data If Desired
-test_labels = test_data[:2000, 0]
-test_data = test_data[:2000, 1:].astype(np.float)
-train_labels = train_data[:2000, 0]
-train_data = train_data[:2000, 1:].astype(np.float)
+test_labels = test_data[:1000, 0]
+test_data = test_data[:1000, 1:4].astype(np.float)
+train_labels = train_data[:1000, 0]
+train_data = train_data[:1000,1:4].astype(np.float)
 
 
 knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=10, metric="euclidean")

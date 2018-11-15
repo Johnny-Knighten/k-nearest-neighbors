@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 from math import sqrt
 
-from knn.distance_metrics import euclidean, manhattan, cosine, pearson, hamming, chisqr
+from knn.distance_metrics import cosine, pearson
+from knn.distance_metrics_cython import euclidean_pairwise, manhattan_pairwise, hamming_pairwise, chisqr_pairwise
 
 
 class TestVectorizedDistanceMetrics(unittest.TestCase):
@@ -50,7 +51,7 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
         self.train_chi_vectors = np.array([self.chi_vector_3, self.chi_vector_4, self.chi_vector_5])
 
     def test_euclidean(self):
-        distance_matrix = euclidean(self.test_train_vectors, self.test_test_vectors)
+        distance_matrix = euclidean_pairwise(self.test_train_vectors, self.test_test_vectors)
         self.assertTrue(np.allclose(np.array([1., 0.76536686, 0.76536686, 1.84775907, 1.84775907]),
                                     distance_matrix[0, :]))
         self.assertTrue(np.allclose(np.array([1., 1.84775907, 0.76536686, 0.76536686, 1.84775907]),
@@ -61,14 +62,14 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
                                     distance_matrix[3, :]))
 
     def test_manhattan(self):
-        distance_matrix = manhattan(self.test_train_vectors, self.test_test_vectors)
+        distance_matrix = manhattan_pairwise(self.test_train_vectors, self.test_test_vectors)
         self.assertTrue(np.allclose(np.array([1.41421356, 1., 1., 2.41421356, 2.41421356]), distance_matrix[0, :]))
         self.assertTrue(np.allclose(np.array([1.41421356, 2.41421356, 1., 1., 2.41421356]), distance_matrix[1, :]))
         self.assertTrue(np.allclose(np.array([1.41421356, 2.41421356, 2.41421356, 1., 1.]), distance_matrix[2, :]))
         self.assertTrue(np.allclose(np.array([1.41421356, 1., 2.41421356, 2.41421356, 1.]), distance_matrix[3, :]))
 
     def test_hamming(self):
-        distance_matrix = hamming(self.train_bs_vectors, self.test_bs_vectors)
+        distance_matrix = hamming_pairwise(self.train_bs_vectors, self.test_bs_vectors)
         self.assertTrue(np.allclose(np.array([5, 4, 3, 2, 1]), distance_matrix[0, :]))
         self.assertTrue(np.allclose(np.array([1, 2, 3, 4, 5]), distance_matrix[1, :]))
 
@@ -88,7 +89,7 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([1., 0., 2., 2., 0.]), distance_matrix[3, :]))
 
     def test_chisqr(self):
-        distance_matrix = chisqr(self.train_chi_vectors, self.test_chi_vectors)
+        distance_matrix = chisqr_pairwise(self.train_chi_vectors, self.test_chi_vectors)
         self.assertTrue(np.allclose(np.array([0.08683298, 0.1335905, 0.07737234]), distance_matrix[0, :]))
         self.assertTrue(np.allclose(np.array([0.08521912, 0.11670043, 0.06137515]), distance_matrix[1, :]))
 

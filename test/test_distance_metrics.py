@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 from math import sqrt, cos, pi
 
-from knn.non_optimized_distance_metrics import euclidean, manhattan, cosine, pearson, chisqr, hamming
+from knn.non_optimized_distance_metrics import cosine, pearson
+from knn.distance_metrics_cython import euclidean, manhattan, hamming, chisqr
 
 
 
@@ -28,13 +29,13 @@ class TestDistanceMetrics(unittest.TestCase):
         self.chi_vector_2 = np.array([10.0, 5.0])
 
         # Bit Strings
-        self.bs_all_1_len_6 = np.array([1, 1, 1, 1, 1, 1])
-        self.bs_all_0_len_6 = np.array([0, 0, 0, 0, 0, 0])
-        self.bs_1_on_5_off = np.array([1, 0, 0, 0, 0, 0])
-        self.bs_2_on_4_off = np.array([1, 1, 0, 0, 0, 0])
-        self.bs_3_on_3_off = np.array([1, 1, 1, 0, 0, 0])
-        self.bs_4_on_2_off = np.array([1, 1, 1, 1, 0, 0])
-        self.bs_5_on_1_off = np.array([1, 1, 1, 1, 1, 0])
+        self.bs_all_1_len_6 = np.array([1, 1, 1, 1, 1, 1]).astype(np.float)
+        self.bs_all_0_len_6 = np.array([0, 0, 0, 0, 0, 0]).astype(np.float)
+        self.bs_1_on_5_off = np.array([1, 0, 0, 0, 0, 0]).astype(np.float)
+        self.bs_2_on_4_off = np.array([1, 1, 0, 0, 0, 0]).astype(np.float)
+        self.bs_3_on_3_off = np.array([1, 1, 1, 0, 0, 0]).astype(np.float)
+        self.bs_4_on_2_off = np.array([1, 1, 1, 1, 0, 0]).astype(np.float)
+        self.bs_5_on_1_off = np.array([1, 1, 1, 1, 1, 0]).astype(np.float)
 
     def test_euclidean(self):
         # Identical Input

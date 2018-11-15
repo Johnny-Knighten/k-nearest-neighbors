@@ -18,7 +18,7 @@ class KNNMixin:
                        "hamming": dmc.hamming_pairwise,
                        "cosine": dm.cosine,
                        "pearson": dm.pearson,
-                       "chisqr": dm.chisqr}
+                       "chisqr": dmc.chisqr}
             # Default To Euclidean If Given Metric Does Not Exist
             self.metric = metrics.get(metric, dm.euclidean)
 
@@ -31,7 +31,7 @@ class KNNMixin:
         return k_smallest_ind
 
     def _train_tree(self, train_data, leaf_size, metric="euclidean"):
-        ball_tree = BallTree(train_data, leaf_size, metric)
+        ball_tree = BallTree(train_data, leaf_size)
         ball_tree.build_tree()
         return ball_tree
 
