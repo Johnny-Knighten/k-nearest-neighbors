@@ -1,8 +1,7 @@
 import numpy as np
 import knn.distance_metrics as dm
 from knn.ball_tree import BallTree
-import math
-import knn.distance_metrics_cython as dmc
+import knn.distance_metrics as dm
 
 
 class KNNMixin:
@@ -13,12 +12,12 @@ class KNNMixin:
         if callable(metric):
             self.metric = metric
         else:
-            metrics = {"euclidean": dmc.euclidean_pairwise,
-                       "manhattan": dmc.manhattan_pairwise,
-                       "hamming": dmc.hamming_pairwise,
+            metrics = {"euclidean": dm.euclidean_pairwise,
+                       "manhattan": dm.manhattan_pairwise,
+                       "hamming": dm.hamming_pairwise,
                        "cosine": dm.cosine,
                        "pearson": dm.pearson,
-                       "chisqr": dmc.chisqr}
+                       "chisqr": dm.chisqr}
             # Default To Euclidean If Given Metric Does Not Exist
             self.metric = metrics.get(metric, dm.euclidean)
 
@@ -31,7 +30,7 @@ class KNNMixin:
         return k_smallest_ind
 
     def _train_tree(self, train_data, leaf_size, metric="euclidean"):
-        ball_tree = BallTree(train_data, leaf_size)
+        ball_tree = BallTree(train_data, leaf_size, metric)
         ball_tree.build_tree()
         return ball_tree
 

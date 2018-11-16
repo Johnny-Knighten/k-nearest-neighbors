@@ -2,7 +2,7 @@ import cython
 import numpy as np
 cimport numpy as np
 import math
-from knn.distance_metrics_cython cimport _euclidean, _euclidean_pairwise, _manhattan, _manhattan_pairwise, _hamming,\
+from knn.distance_metrics cimport _euclidean, _euclidean_pairwise, _manhattan, _manhattan_pairwise, _hamming,\
     _hamming_pairwise
 
 ctypedef double (*metric_func)(double[::1], double[::1])

@@ -181,52 +181,59 @@ MNIST Classification - Ball Tree
 
 
 
-from knn.ball_tree import BallTree
 
-mnist_data = np.load('./sample_data/mnist/mnist_data.npz')
-train_data = mnist_data['train_data']
-test_data = mnist_data['test_data']
+# mnist_data = np.load('./sample_data/mnist/mnist_data.npz')
+# train_data = mnist_data['train_data']
+# test_data = mnist_data['test_data']
+#
+# # Subset Data If Desired
+# test_labels = test_data[:1000, 0]
+# test_data = test_data[:1000, 1:4].astype(np.float)
+# train_labels = train_data[:1000, 0]
+# train_data = train_data[:1000,1:4].astype(np.float)
+#
+#
+# knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=10, metric="euclidean")
+# knn.train(train_labels, train_data)
+# # Get Predictions
+# predictions = knn.predict(test_data)
+# #print(predictions)
+# accuracy = sum(test_labels == predictions)/test_labels.size
+# print("Accuracy: " + str(accuracy))
+#
+# knn2 = KNNClassification(k=5, metric="euclidean")
+# knn2.train(train_labels, train_data)
+# # Get Predictions
+# predictions = knn2.predict(test_data)
+# #print(predictions)
+# accuracy = sum(test_labels == predictions)/test_labels.size
+# print("Accuracy: " + str(accuracy))
 
-# Subset Data If Desired
-test_labels = test_data[:1000, 0]
-test_data = test_data[:1000, 1:4].astype(np.float)
-train_labels = train_data[:1000, 0]
-train_data = train_data[:1000,1:4].astype(np.float)
 
+'''
+ Structured Data
+'''
+points_per_region = 2000
+number_of_regions = 16
 
-knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=10, metric="euclidean")
-knn.train(train_labels, train_data)
+random_data = np.empty((points_per_region * number_of_regions,2))
+region = 0
+
+for i in range(-30, 30, 15):
+    for j in range(-30, 30, 15):
+        mu = np.array([i+7.5, j+7.5])
+        sigma = np.array([[1, 0],[0, 1]])
+        random_data[region:region+points_per_region] = np.random.multivariate_normal(mu, sigma, points_per_region)
+        region = region + points_per_region
+
+labels = np.repeat(np.arange(number_of_regions), points_per_region)
+
+knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=20, metric="euclidean")
+knn.train(labels, random_data)
 # Get Predictions
-predictions = knn.predict(test_data)
-#print(predictions)
-accuracy = sum(test_labels == predictions)/test_labels.size
-print("Accuracy: " + str(accuracy))
+predictions = knn.predict(random_data)
 
 knn2 = KNNClassification(k=5, metric="euclidean")
-knn2.train(train_labels, train_data)
+knn2.train(labels, random_data)
 # Get Predictions
-predictions = knn2.predict(test_data)
-#print(predictions)
-accuracy = sum(test_labels == predictions)/test_labels.size
-print("Accuracy: " + str(accuracy))
-
-
-
-
-#tree = BallTree(train_data, 10)
-#tree.build_tree()
-
-
-#tree.query(test_data, 3)
-
-
-
-
-
-
-# print("Test Labels:\n" + str(test_labels))
-# print("Predicted Labels:\n" + str(train_labels[tree.heap_inds.astype(np.int)]))
-
-
-#accuracy = sum(test_labels == predictions)/test_labels.size
-#print("Accuracy: " + str(accuracy))
+predictions = knn2.predict(random_data)

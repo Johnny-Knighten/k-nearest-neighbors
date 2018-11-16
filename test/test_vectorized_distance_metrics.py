@@ -1,9 +1,8 @@
 import unittest
 import numpy as np
 from math import sqrt
-
-from knn.distance_metrics import cosine, pearson
-from knn.distance_metrics_cython import euclidean_pairwise, manhattan_pairwise, hamming_pairwise, chisqr_pairwise
+from knn.distance_metrics import euclidean_pairwise, manhattan_pairwise, hamming_pairwise, chisqr_pairwise,\
+    cosine_pairwise, pearson_pairwise
 
 
 class TestVectorizedDistanceMetrics(unittest.TestCase):
@@ -74,7 +73,7 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([1, 2, 3, 4, 5]), distance_matrix[1, :]))
 
     def test_cosine(self):
-        distance_matrix = cosine(self.test_train_vectors, self.test_test_vectors)
+        distance_matrix = cosine_pairwise(self.test_train_vectors, self.test_test_vectors)
         self.assertEqual(np.sum(np.isnan(distance_matrix[:, 0])), 4)
         self.assertTrue(np.allclose(np.array([0.29289322, 0.29289322, 1.70710678, 1.70710678]), distance_matrix[0, 1:]))
         self.assertTrue(np.allclose(np.array([1.70710678, 0.29289322, 0.29289322, 1.70710678]), distance_matrix[1, 1:]))
@@ -82,7 +81,7 @@ class TestVectorizedDistanceMetrics(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([0.29289322, 1.70710678, 1.70710678, 0.29289322]), distance_matrix[3, 1:]))
 
     def test_pearson(self):
-        distance_matrix = pearson(self.test_train_vectors, self.test_test_vectors)
+        distance_matrix = pearson_pairwise(self.test_train_vectors, self.test_test_vectors)
         self.assertTrue(np.allclose(np.array([1., 1., 1., 1., 1.]), distance_matrix[0, :]))
         self.assertTrue(np.allclose(np.array([1., 2., 0., 0., 2.]), distance_matrix[1, :]))
         self.assertTrue(np.allclose(np.array([1., 1., 1., 1., 1.]), distance_matrix[2, :]))
