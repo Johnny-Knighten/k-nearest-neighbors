@@ -1,12 +1,11 @@
 import numpy as np
-import knn.distance_metrics as dm
 from knn.ball_tree import BallTree
 import knn.distance_metrics as dm
 
 
 class KNNMixin:
 
-    def _brute_force_knn(self, test_data, metric="euclidean", distances=False, ):
+    def _brute_force_knn(self, test_data, metric="euclidean", distances=False):
 
         # Get Desired Metric
         if callable(metric):
@@ -39,9 +38,6 @@ class KNNMixin:
         return ball_tree.heap_inds
 
 
-
-
-
 class KNNClassification(KNNMixin):
 
     def __init__(self, k=1, metric="euclidean", use_tree=False, tree_leaf_size=1):
@@ -66,15 +62,12 @@ class KNNClassification(KNNMixin):
 
         if self.use_tree:
             indices = self._query_tree(self.ball_tree, test_data)
-            labels = self.labels[indices]
-            output_labels = np.apply_along_axis(lambda x: np.bincount(x).argmax(), 1, labels)
-            return output_labels
-
         else:
             indices = self._brute_force_knn(test_data, self.metric, False)
-            labels = self.labels[indices]
-            output_labels = np.apply_along_axis(lambda x: np.bincount(x).argmax(), 1, labels)
-            return output_labels
+
+        labels = self.labels[indices]
+        output_labels = np.apply_along_axis(lambda x: np.bincount(x).argmax(), 1, labels)
+        return output_labels
 
 
 class KNNRegression(KNNMixin):
@@ -100,12 +93,9 @@ class KNNRegression(KNNMixin):
 
         if self.use_tree:
             indices = self._query_tree(self.ball_tree, test_data)
-            responses = self.train_response[indices]
-            output_responses = np.mean(responses, axis=1)
-            return output_responses
-
         else:
             indices = self._brute_force_knn(test_data, self.metric, False)
-            responses = self.train_response[indices]
-            output_responses = np.mean(responses, axis=1)
-            return output_responses
+
+        responses = self.train_response[indices]
+        output_responses = np.mean(responses, axis=1)
+        return output_responses
