@@ -16,11 +16,11 @@ test_data = np.array([[5., 10., 15.],
                       [10., 20., 30.]])
 
 # Create and Train Classifier
-knn = KNNClassification(k=1, metric="euclidean")
+knn = KNNClassification(metric="euclidean")
 knn.train(train_labels, train_data)
 
 # Get Predictions
-predictions = knn.predict(test_data)
+predictions = knn.predict(test_data, k=1)
 print("k=1 Predictions:\n" + str(predictions))
 
 
@@ -33,17 +33,17 @@ train_data = mnist_data['train_data']
 test_data = mnist_data['test_data']
 
 # Subset Data If Desired
-test_labels = test_data[:20000, 0]
-test_data = test_data[:20000, 1:].astype(np.float)
-train_labels = train_data[:60000, 0]
-train_data = train_data[:60000, 1:].astype(np.float)
+test_labels = test_data[:2000, 0]
+test_data = test_data[:2000, 1:].astype(np.float)
+train_labels = train_data[:6000, 0]
+train_data = train_data[:6000, 1:].astype(np.float)
 
 # Create and Train Classifier
-knn = KNNClassification(k=5, metric="manhattan")
+knn = KNNClassification(metric="manhattan")
 knn.train(train_labels, train_data)
 
 # Get Predictions
-predictions = knn.predict(test_data)
+predictions = knn.predict(test_data, k=5)
 
 print("Test Labels:\n" + str(test_labels))
 print("Predicted Labels:\n" + str(predictions))
@@ -70,17 +70,13 @@ def scipy_cityblock(vectors_a, vectors_b):
     return distance.cdist(vectors_b, vectors_a, 'cityblock')
 
 # Create and Train Classifier
-knn = KNNClassification(k=5, metric=scipy_cityblock)
+knn = KNNClassification(metric=scipy_cityblock)
 knn.train(train_labels, train_data)
 
 # Get Predictions
-predictions = knn.predict(test_data)
+predictions = knn.predict(test_data, k=1)
 
-print("Test Labels:\n" + str(test_labels))
-print("Predicted Labels:\n" + str(predictions))
-
-accuracy = sum(test_labels == predictions)/test_labels.size
-print("Accuracy: " + str(accuracy))
+print("k=1 Predictions:\n" + str(predictions))
 
 
 '''
@@ -88,19 +84,20 @@ Million Song Dataset(MSD) Regression
 '''
 msd_data = np.load('./sample_data/msd/msd_data.npz')
 
+# Note - astype() Used To Make Arrays Contiguous
 train_data = msd_data['train_data']
 train_response = train_data[:600000, 0]
-train_data = train_data[:600000, 1:]
+train_data = train_data[:600000, 1:].astype(np.float)
 
 test_data = msd_data['test_data']
 test_response = test_data[:500, 0]
-test_data = test_data[:500, 1:]
+test_data = test_data[:500, 1:].astype(np.float)
 
-knn = KNNRegression(k=35, metric="manhattan")
+knn = KNNRegression(metric="manhattan")
 knn.train(train_response, train_data)
 
 # Get Predictions
-predicted_response = knn.predict(test_data)
+predicted_response = knn.predict(test_data, k=35)
 
 print("Actual Response:\n" + str(test_response[:20]))
 print("Predicted Response:\n" + str(predicted_response[:20]))
@@ -113,15 +110,15 @@ print("Root Mean Square Error: " + str(error))
  Simple Example - Classification Using Ball Tree
 '''
 
-train_data = np.array([[4, -2], [5, 5], [8, 7], [-6, -1], [-1, -3], [-4,-8]])
+train_data = np.array([[4, -2], [5, 5], [8, 7], [-6, -1], [-1, -3], [-4,-8]]).astype(np.float)
 train_labels = np.array([1, 1, 1, 0, 0, 0])
 
-test_data = np.array([[6, 4], [-8, -4]])
+test_data = np.array([[6, 4], [-8, -4]]).astype(np.float)
 
-knn = KNNClassification(k=3, metric="euclidean", tree=True, tree_leaf_size=3)
+knn = KNNClassification(metric="euclidean", use_tree=True, tree_leaf_size=3)
 knn.train(train_labels, train_data)
-predictions = knn.predict(test_data)
-print("k=1 Predictions:\n" + str(predictions))
+predictions = knn.predict(test_data, k=3)
+print("k=3 Predictions:\n" + str(predictions))
 
 
 '''
@@ -139,11 +136,11 @@ train_labels = train_data[:1000, 0]
 train_data = train_data[:1000, 1:].astype(np.float)
 
 # Create and Train Classifier
-knn = KNNClassification(k=3, metric="manhattan", tree=True, tree_leaf_size=100)
+knn = KNNClassification(metric="manhattan", use_tree=True, tree_leaf_size=100)
 knn.train(train_labels, train_data)
 
 # Get Predictions
-predictions = knn.predict(test_data)
+predictions = knn.predict(test_data, k=3)
 
 print("Test Labels:\n" + str(test_labels))
 print("Predicted Labels:\n" + str(predictions))
@@ -158,26 +155,24 @@ Million Song Dataset(MSD) Regression - Ball Tree
 msd_data = np.load('./sample_data/msd/msd_data.npz')
 
 train_data = msd_data['train_data']
-train_response = train_data[:600, 0]
-train_data = train_data[:600, 1:]
+train_response = train_data[:60000, 0]
+train_data = train_data[:60000, 1:].astype(np.float)
 
 test_data = msd_data['test_data']
 test_response = test_data[:500, 0]
-test_data = test_data[:500, 1:]
+test_data = test_data[:500, 1:].astype(np.float)
 
-knn = KNNRegression(k=35, metric="manhattan", tree=True, tree_leaf_size=3)
+knn = KNNRegression(metric="manhattan", use_tree=True, tree_leaf_size=3)
 knn.train(train_response, train_data)
 
 # Get Predictions
-predicted_response = knn.predict(test_data)
+predicted_response = knn.predict(test_data, k=35)
 
 print("Actual Response:\n" + str(test_response[:20]))
 print("Predicted Response:\n" + str(predicted_response[:20]))
 
 error = np.sqrt(np.mean(np.square(test_response-predicted_response)))
 print("Root Mean Square Error: " + str(error))
-
-
 
 
 '''
@@ -200,8 +195,7 @@ for i in range(-30, 30, 15):
 
 labels = np.repeat(np.arange(number_of_regions), points_per_region)
 
-knn = KNNClassification(k=5, use_tree=True, tree_leaf_size=20, metric="euclidean")
+knn = KNNClassification(use_tree=True, tree_leaf_size=20, metric="euclidean")
 knn.train(labels, random_data)
 # Get Predictions
-predictions = knn.predict(random_data)
-
+predictions = knn.predict(random_data, k=5)

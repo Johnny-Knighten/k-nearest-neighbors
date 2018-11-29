@@ -159,3 +159,4 @@ example_usage.py.
 # Possible Updates
 1. Allow the use of numpy arrays of types other than np.float
 2. Implemented Brute Force KNN in Cython
+3. Minimize duplicate code in k_nearest_neighbors.py
