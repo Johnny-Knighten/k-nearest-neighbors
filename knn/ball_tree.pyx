@@ -5,18 +5,22 @@ import math
 from knn.distance_metrics cimport _euclidean, _euclidean_pairwise, _manhattan, _manhattan_pairwise, _hamming,\
     _hamming_pairwise
 
+# Types That Hold Metric Functions
 ctypedef double (*metric_func)(double[::1], double[::1])
 ctypedef double[:, ::1] (*pairwise_metric_fun)(double[:, ::1], double[:, ::1])
 
 cdef class BallTree:
 
+    # Training Data
     cdef double[:, ::1] data_view
     cdef long[::1] data_inds_view
     cdef np.ndarray data
     cdef np.ndarray data_inds
 
+    # Query Data
     cdef double[:,::1] query_data_view
 
+    # Tree Data
     cdef np.ndarray node_data_inds
     cdef np.ndarray node_radius
     cdef np.ndarray node_is_leaf
@@ -26,18 +30,20 @@ cdef class BallTree:
     cdef double[::1] node_is_leaf_view
     cdef double[:, ::1] node_center_view
 
+    # Tree Shape
     cdef int leaf_size
     cdef int node_count
     cdef int tree_height
 
+    # Query Results
     cdef public np.ndarray heap
     cdef double[:, ::1] heap_view
     cdef public np.ndarray heap_inds
     cdef long[:, ::1] heap_inds_view
 
+    # Query Metrics
     cdef metric_func metric
     cdef pairwise_metric_fun pair_metric
-
 
     def __init__(self, data, leaf_size, metric="euclidean"):
 
@@ -63,6 +69,7 @@ cdef class BallTree:
         self.node_is_leaf_view = memoryview(self.node_is_leaf)
         self.node_center_view = memoryview(self.node_center)
 
+        # Metric Selection
         if metric == "manhattan":
             self.metric = _manhattan
             self.pair_metric = _manhattan_pairwise
@@ -73,12 +80,12 @@ cdef class BallTree:
             self.metric = _euclidean
             self.pair_metric = _euclidean_pairwise
 
-
+    # Python Visible Build Method
     def build_tree(self):
         self._build(0, 0, self.data.shape[0]-1)
 
-
-    def _build(self, long node_index, long node_data_start, long node_data_end):
+    # Cython Build Method
+    cdef _build(self, long node_index, long node_data_start, long node_data_end):
 
         ##########################
         # Current Node Is A Leaf #
@@ -144,7 +151,9 @@ cdef class BallTree:
         self._build(left_index, node_data_start,  node_data_start+ (proj_data.size//2)-1 )
         self._build(right_index, node_data_start+(proj_data.size//2),   node_data_end)
 
-
+    # Hoare Partitioning Algorithm
+    # Move All NumberS Smaller Than Pivot To Left Of Pivot
+    # Move All Numbers Greater Than Pivot To Right Of Pivot
     cdef int _hoare_partition(self, pivot, low, high, projected_data):
 
         i = low - 1
@@ -180,6 +189,7 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
+    # Python Visible Ball Tree Query Method
     def query(self, query_data, k):
 
         cdef int i
@@ -204,6 +214,7 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
+    # Cython Recursive Query Method
     cdef int _query(self, int query_vect_ind, double dist_to_cent, int curr_node, double[::1] query_data):
 
         cdef int i, child1, child2, lower_index, upper_index, curr_index
@@ -248,6 +259,7 @@ cdef class BallTree:
 
     @cython.initializedcheck(False)
     @cython.boundscheck(False)
+    # Look At Top Number In Heap Stored at Row/Level
     cdef inline double _heap_peek_head(self, int level):
         return self.heap_view[level, 0]
 
@@ -255,6 +267,7 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
+    # Pop Current Top Element In Heap And Push New Value Into Heap
     cdef int _heap_pop_push(self, int level, double value, int index):
 
         cdef int left_ind, right_ind
