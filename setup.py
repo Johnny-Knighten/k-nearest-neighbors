@@ -2,12 +2,12 @@
 # https://stackoverflow.com/questions/46784964/create-package-with-cython-so-users-can-install-it-without-having-cython-already
 # https://stackoverflow.com/questions/2379898/make-distutils-look-for-numpy-header-files-in-the-correct-place
 # https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#distributing-cython-modules
-
 from distutils.core import setup
 from distutils.extension import Extension
 from glob import glob
 import os
 
+# Checks If Cython Is Installed
 try:
     from Cython.setuptools import build_ext
 except:
@@ -41,15 +41,15 @@ ext_modules = [
     for source in sources]
 
 setup(
-    name='k-nearest-neighbors',
+    name='knn',
     version='0.1',
     description='KNN using brute force and ball trees implemented in Python/Cython',
     url='https://github.com/JKnighten/k-nearest-neighbors',
     author='Jonathan Knighten',
     author_email='jknigh28@gmail.com',
-
     cmdclass={'build_ext': CustomBuildExtCommand},
     install_requires=['numpy'],
     ext_modules=ext_modules,
+    packages=['knn'],
     zip_safe=False
 )

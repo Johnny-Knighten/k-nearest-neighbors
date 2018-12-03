@@ -139,20 +139,24 @@ in the prototypes directory.
 
 # How To Install
 
-To install and use this package first ensure you have pip installed and
-updated. Then execute the following code while in the packages main
-directory(directory containing setup.py):
-'''
+To install this package first ensure you have pip installed and
+updated. Then execute the following code while in the package's main
+directory(the directory containing setup.py):
+```
  pip install .
-'''
+```
 
-This will install k-nearest-neighbors into your current python 
-environment.
+This will install knn into your current python environment. You then
+will import knn.models to access classes for classification and 
+regression. knn.models also contains a mixin that provides nearest
+neighbor search methods you can use in your own classes.
 
-Note - Cython and Numpy are used in this project. Numpy is required to be
-installed but Cython is not. If Cython is not installed the packages .c 
+Note - Cython and Numpy are used in this project. Numpy is required but
+Cython is not. If Cython is not installed the packaged .c 
 files will be complied using your systems default c compiler. Numpy
-will be installed when executing the install code above.
+will be installed when installing knn.
+
+Note - This code was designed and tested using Python 3.5.2.
 
 
 
