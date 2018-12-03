@@ -139,7 +139,21 @@ in the prototypes directory.
 
 # How To Install
 
-Yet To Be Completed.
+To install and use this package first ensure you have pip installed and
+updated. Then execute the following code while in the packages main
+directory(directory containing setup.py):
+'''
+ pip install .
+'''
+
+This will install k-nearest-neighbors into your current python 
+environment.
+
+Note - Cython and Numpy are used in this project. Numpy is required to be
+installed but Cython is not. If Cython is not installed the packages .c 
+files will be complied using your systems default c compiler. Numpy
+will be installed when executing the install code above.
+
 
 
 # Notes About Use
