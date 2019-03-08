@@ -2,15 +2,45 @@ import numpy as np
 from knn.ball_tree import BallTree
 import knn.distance_metrics as dm
 
-
 class NNSearchMixin:
+    """ A Mixin that provides methods for brute force NN queries, ball tree construction, and ball tree queries.
+
+    This mixin is used to provide foundational methods that are required by all NN models. All distance metrics used
+    are made using Cython. Brute Force NN offers more distance metric options than the Ball Tree methods and allows
+    the user to pass their own function as the metric.
+
+    Could be used as a standalone object, but it is intended to be used as a mixin for other classes.
+
+    Attributes:
+        metric (string or callable): A string  or callable representing the metric to be used by the NN methods.
+            Defaults to euclidean distance.
+        ball_tree (:obj:'BallTree'): The Ball Tree constructed and used by the Ball Tree methods
+
+    """
 
     def __init__(self):
+        """ Creates a NNSearchMixin object.
+
+        """
         self.metric = None
         self.ball_tee = None
 
-    # Brute Force Nearest Neighbor Search
     def _brute_force_nn_query(self, train_data, test_data, k=1, metric="euclidean", distances=False):
+        """ Finds the NNs of a set of query vectors using brute force.
+
+        Args:
+            train_data(ndarray): A 2D array of vectors being searched through.
+            test_data(ndarray): A 2D array of query vectors.
+            k(int): The number of NNs to be found.
+            metric(string or callable): The metric used in the search.
+            distances(bool): A flag to determine if distances will be returned.
+
+        Returns:
+            (tuple): tuple containing:
+                k_smallest_ind (ndarray): A 2D array of of the indices of the NNs for each query vector.
+                distances (ndarray): A 2D array of distances of the NNs for each query vector.
+
+        """
 
         # Get Desired Metric
         if callable(metric):
@@ -34,13 +64,35 @@ class NNSearchMixin:
 
         return k_smallest_ind
 
-    # Build Ball Tree For Nearest Neighbor Search
     def _ball_tree_build(self, train_data, leaf_size=1, metric="euclidean"):
+        """ Creates A Ball Tree using the supplied vectors.
+
+        Args:
+            train_data(ndarray): A 2D array of vectors being searched through.
+            leaf_size(int): The number of vectors contained in the leaves of the Ball Tree.
+            metric(string): The metric used in the search.
+
+        """
         self.ball_tree = BallTree(train_data, leaf_size, metric)
         self.ball_tree.build_tree()
 
-    # Use Ball Tree To Perform Nearest Neighbor Search
     def _ball_tree_nn_query(self, query_vectors, k=1, distances=False):
+        """ Peforms a NN search using A Ball Tree.
+
+        Must execute _ball_tree_build() before using this method.
+
+        Args:
+            query_vectors(ndarray): A 2D array of query vectors.
+            k(int): The number of NNs to be found.
+            distances(bool): A flag to determine if distances will be returned.
+
+        Returns:
+            (tuple): tuple containing:
+                k_smallest_ind (ndarray): A 2D array of of the indices of the NNs for each query vector.
+                distances (ndarray): A 2D array of distances of the NNs for each query vector.
+
+
+        """
         self.ball_tree.query(query_vectors, k)
 
         # Allows Distances To Be Returned
