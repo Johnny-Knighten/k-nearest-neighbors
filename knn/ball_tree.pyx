@@ -10,8 +10,11 @@ ctypedef double (*metric_func)(double[::1], double[::1])
 ctypedef double[:, ::1] (*pairwise_metric_fun)(double[:, ::1], double[:, ::1])
 
 cdef class BallTree:
+    """ A Ball Tree used for nearest neighbor searches.
 
-    # Training Data
+    """
+
+    # Search Data
     cdef double[:, ::1] data_view
     cdef long[::1] data_inds_view
     cdef np.ndarray data
@@ -46,6 +49,17 @@ cdef class BallTree:
     cdef pairwise_metric_fun pair_metric
 
     def __init__(self, data, leaf_size, metric="euclidean"):
+        """ Creates A BallTree instance.
+
+        This does not construct the tree.
+
+        The search data must be numpy arrays of type np.float64 (float_).
+
+        Args:
+            data (ndarray): A 2D array of vectors being searched through.
+            leaf_size (int): The number of vectors contained in the leaves of the Ball Tree.
+            metric (string): The distance metric used by the tree.
+        """
 
         # Data
         self.data = np.asarray(data, dtype=np.float, order='C')
@@ -80,12 +94,24 @@ cdef class BallTree:
             self.metric = _euclidean
             self.pair_metric = _euclidean_pairwise
 
-    # Python Visible Build Method
     def build_tree(self):
+        """ Python visible method to build the Ball Tree.
+
+        """
         self._build(0, 0, self.data.shape[0]-1)
 
-    # Cython Build Method
     cdef _build(self, long node_index, long node_data_start, long node_data_end):
+        """ Cython(Not Visible From Python) method that recursively builds the Ball Tree.
+        
+        Args:
+            node_index: The level of the current node currently being worked on.
+            node_data_start: The begging index of the current nodes data.
+            node_data_end: The ending index of the current nodes data.
+
+        Returns:
+            (None) marks the end of a recursive path, meaning a leaf was created
+
+        """
 
         ##########################
         # Current Node Is A Leaf #
@@ -133,7 +159,7 @@ cdef class BallTree:
         pivot = median
         self._hoare_partition(pivot, low, high, proj_data)
 
-        # Create Circle
+        # Create Balls
         center = np.mean(self.data[self.data_inds[node_data_start:node_data_end+1]], axis=0)
         radius = np.max(self.pair_metric(self.data[self.data_inds[node_data_start:node_data_end+1]], center[np.newaxis, :]))
 
@@ -145,52 +171,77 @@ cdef class BallTree:
 
         self.node_is_leaf[node_index] = False
 
-        # Build Children Circles
+        # Build Children Balls
         left_index = 2 * node_index + 1
         right_index = left_index + 1
         self._build(left_index, node_data_start,  node_data_start+ (proj_data.size//2)-1 )
         self._build(right_index, node_data_start+(proj_data.size//2),   node_data_end)
 
-    # Hoare Partitioning Algorithm
-    # Move All NumberS Smaller Than Pivot To Left Of Pivot
-    # Move All Numbers Greater Than Pivot To Right Of Pivot
     cdef int _hoare_partition(self, pivot, low, high, projected_data):
+        """ Cython(Not Visible From Python) method that performs Hoare partitioning.
+        
+        All Numbers greater than the pivot is to the left of the pivot, and everything greater to the right.
+        
+        This method takes the current node's data after being projected and uses this data to perform partitioning. It
+        will also update the current balls associated data's indices.
+        
+        Args:
+            pivot: The value that is used to partition the array.
+            low: The beginning index of the current balls data.
+            high: The ending index of the current balls data
+            projected_data: The nodes data after being projected.
 
-        i = low - 1
-        j = high + 1
-        i2 = -1
-        j2 = projected_data.shape[0]
+        Returns:
+            The data index were the partitioning stopped.
+
+        """
+
+        i_data_inds = low - 1
+        j_data_inds = high + 1
+        i_projected = -1
+        j_projected = projected_data.shape[0]
 
         while True:
 
             # Scan From Left To Find Value Greater Than Pivot
             condition = True
             while condition:
-                i += 1
-                i2 += 1
-                condition = projected_data[i2] < pivot
+                i_data_inds += 1
+                i_projected += 1
+                condition = projected_data[i_projected] < pivot
 
             # Scan From Right To Find Value Less Than Pivot
             condition = True
             while condition:
-                j -= 1
-                j2 -= 1
-                condition = projected_data[j2] > pivot
+                j_data_inds -= 1
+                j_projected -= 1
+                condition = projected_data[j_projected] > pivot
 
             # Time To End Algorithm
-            if (i >= j):
-                return j
+            if (i_data_inds >= j_data_inds):
+                return j_data_inds
 
             # Swap Values
-            projected_data[i2], projected_data[j2] = projected_data[j2], projected_data[i2]
-            self.data_inds[i], self.data_inds[j] = self.data_inds[j], self.data_inds[i]
+            projected_data[i_projected], projected_data[j_projected] = projected_data[j_projected], projected_data[i_projected]
+            self.data_inds[i_data_inds], self.data_inds[j_data_inds] = self.data_inds[j_data_inds], self.data_inds[i_data_inds]
 
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
-    # Python Visible Ball Tree Query Method
     def query(self, query_data, k):
+        """ Python visible method to query the Ball Tree.
+
+        This will assign self.heap_inds with the indices of the NN for each query vector. Each row off object.heap_inds
+        represents the NN of one training vector.
+
+        The NNs are not sorted by distance. If you need distance information access object.heap.
+
+        Args:
+            query_data (ndarray): A 2D array of query vectors.
+            k (int): The number of NNs to find.
+
+        """
 
         cdef int i
         cdef double[::1] query_vector, initial_center
@@ -214,14 +265,26 @@ cdef class BallTree:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.initializedcheck(False)
-    # Cython Recursive Query Method
     cdef int _query(self, int query_vect_ind, double dist_to_cent, int curr_node, double[::1] query_data):
+        """ Cython(Not Visible From Python) method that searches the ball tree.
+        
+        This method updates the heap data structures created in query().
+        
+        Args:
+            query_vect_ind (int): The index of the query vector.
+            dist_to_cent (double): The distance the query vector is from the center of the current ball.
+            curr_node (int): The index of the current ball/node.
+            query_data (ndarray): The current query vector.
+
+        Returns:
+            (int) Zero to represent the end of the recursion.
+        """
 
         cdef int i, child1, child2, lower_index, upper_index, curr_index
         cdef double child1_dist, child2_dist, dist
         cdef double[::1] curr_vect, child1_center, child2_center
 
-        # Prune This Ball
+        # Prune The Ball
         if dist_to_cent - self.node_radius_view[curr_node] > self._heap_peek_head(query_vect_ind):
             return 0
 
@@ -236,7 +299,7 @@ cdef class BallTree:
                 if dist < self._heap_peek_head(query_vect_ind):
                     self._heap_pop_push(query_vect_ind, dist, self.data_inds_view[i])
 
-        # Not Leaf So Explore Children
+        # Not A Leaf So Explore Children
         else:
             child1 = 2 * curr_node + 1
             child2 = child1 + 1
@@ -257,10 +320,25 @@ cdef class BallTree:
         return 0
 
 
+    ####################
+    # Max Heap Methods #
+    ####################
+
     @cython.initializedcheck(False)
     @cython.boundscheck(False)
-    # Look At Top Number In Heap Stored at Row/Level
     cdef inline double _heap_peek_head(self, int level):
+        """ Cython(Not Visible From Python) method that gets the top element in the max heap for the specified query
+            vector.
+            
+        This just retrieves the value it does not remove the head.
+        
+        Args:
+            level (int): The index of the current query vector.
+
+        Returns:
+            (double) The distance NN of the current query vector that is farthest away.
+    
+        """
         return self.heap_view[level, 0]
 
 
@@ -269,6 +347,22 @@ cdef class BallTree:
     @cython.initializedcheck(False)
     # Pop Current Top Element In Heap And Push New Value Into Heap
     cdef int _heap_pop_push(self, int level, double value, int index):
+        """Cython(Not Visible From Python) method that pops the top of the max heap and then pushes the a new value into
+            it.
+            
+        The max heap keeps the distance away vectors are away from a query vector as well as the indices of the vectors
+        they represent. When a pop push occurs the values in the heap and the indices of the vectors they represent are
+        also updated. 
+        
+        Args:
+            level (int): The index of the current query vector. 
+            value (double): The new value to push into the max heap. 
+            index (int): The index of the new value being pushed into the max heap. 
+
+        Returns: 
+            (int) 0 to mark the end of execution.
+
+        """
 
         cdef int left_ind, right_ind
         cdef int i
