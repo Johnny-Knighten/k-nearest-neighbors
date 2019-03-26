@@ -1,6 +1,6 @@
-This is a python/cython implementation of KNN algorithms. Two algorithms are provided: a brute force algorithm 
-implemented with numpy and a ball tree implemented using cython. Also provided is a set of distance metrics that are 
-implemented in cython.
+This is a Python/Cython implementation of KNN algorithms. Two algorithms are provided: a brute force algorithm 
+implemented with numpy and a ball tree implemented using Cython. Also provided is a set of distance metrics that are 
+implemented in Cython.
 
 An overview of KNN and ball tress can be found [here](https://github.com/JKnighten/k-nearest-neighbors/wiki/KNN-and-BallTree-Overview).
 
