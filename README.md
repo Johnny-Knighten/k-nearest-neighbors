@@ -56,9 +56,55 @@ This may be changed in the future.
 
 # Example Use
 
-Example use of the the implemented algorithms can be found in
-example_usage.py.
+Brute force classification:
 
+```python
+import numpy as np
+from knn.models import KNNClassification
+
+train_data = np.array([[1., 2., 3.],
+                       [5., 6., 7.],
+                       [8., 9., 10.]])
+train_labels = np.array([0, 1, 1])
+
+test_data = np.array([[5., 10., 15.],
+                      [10., 20., 30.]])
+
+# Create and Train Classifier
+knn = KNNClassification(metric="euclidean")
+knn.train(train_labels, train_data)
+
+# Get Predictions
+predictions = knn.predict(test_data, k=1)
+print("k=1 Predictions:\n" + str(predictions))
+```
+
+Ball tree classification:
+
+```python
+import numpy as np
+from knn.models import KNNClassification
+
+train_data = np.array([[1., 2., 3.],
+                       [5., 6., 7.],
+                       [8., 9., 10.]])
+train_labels = np.array([0, 1, 1])
+
+test_data = np.array([[5., 10., 15.],
+                      [10., 20., 30.]])
+
+# Create and Train Classifier
+knn = KNNClassification(use_tree=True, metric="euclidean")
+knn.train(train_labels, train_data)
+
+# Get Predictions
+predictions = knn.predict(test_data, k=1)
+print("k=1 Predictions:\n" + str(predictions))
+```
+
+For regression just use the KNNRegression class in knn.models.
+
+More examples can be found in example_usage.py.
 
 # Possible Updates
 1. Allow the use of numpy arrays of types other than np.float
