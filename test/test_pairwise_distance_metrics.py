@@ -5,7 +5,7 @@ from knn.distance_metrics import euclidean_pairwise, manhattan_pairwise, hamming
     cosine_pairwise, pearson_pairwise
 
 
-class TestVectorizedDistanceMetrics(unittest.TestCase):
+class TestPairwiseDistanceMetrics(unittest.TestCase):
 
     def setUp(self):
         # Vectors That Range From 0 Degrees to 360 Degrees By 90 Degree Increments
