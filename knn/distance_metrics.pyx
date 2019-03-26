@@ -8,32 +8,32 @@ cimport numpy as np
 # Euclidean Distance #
 ######################
 
-def euclidean(double[::1] vectors_a, double[::1] vectors_b):
+def euclidean(double[::1] vector_a, double[::1] vector_b):
     """ Finds the euclidean distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the euclidean distance between the two supplied vectors.
 
     """
-    return _euclidean(vectors_a, vectors_b)
+    return _euclidean(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cdef double _euclidean(double[::1] vector1, double[::1] vector2):
+cdef double _euclidean(double[::1] vector_a, double[::1] vector_b):
     cdef double distance = 0.0
-    cdef int dims = vector1.shape[0]
+    cdef int dims = vector_a.shape[0]
     cdef double temp
     cdef int i
 
     for i in range(0, dims):
-        temp = vector1[i] - vector2[i]
+        temp = vector_a[i] - vector_b[i]
         distance += (temp*temp)
 
     return sqrt(distance)
@@ -82,33 +82,33 @@ cdef double[:, ::1] _euclidean_pairwise(double[:, ::1] vectors_a, double[:, ::1]
 # Manhattan Distance #
 ######################
 
-def manhattan(double[::1] vectors_a, double[::1] vectors_b):
+def manhattan(double[::1] vector_a, double[::1] vector_b):
     """ Finds the manhattan distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the manhattan distance between the two supplied vectors.
 
     """
-    return _manhattan(vectors_a, vectors_b)
+    return _manhattan(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cdef double _manhattan(double[::1] vector1, double[::1] vector2):
+cdef double _manhattan(double[::1] vector_a, double[::1] vector_b):
     cdef double distance = 0.0
-    cdef int dims = vector1.shape[0]
+    cdef int dims = vector_a.shape[0]
 
     cdef double temp
     cdef int i
 
     for i in range(0, dims):
-        temp = abs(vector1[i] - vector2[i])
+        temp = abs(vector_a[i] - vector_b[i])
         distance += temp
 
     return distance
@@ -155,32 +155,32 @@ cdef double[:, ::1] _manhattan_pairwise(double[:, ::1] vectors_a, double[:, ::1]
 # Hamming Distance #
 ####################
 
-def hamming(double[::1] vectors_a, double[::1] vectors_b):
+def hamming(double[::1] vector_a, double[::1] vector_b):
     """ Finds the hamming distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the hamming distance between the two supplied vectors.
 
     """
-    return _hamming(vectors_a, vectors_b)
+    return _hamming(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cdef double _hamming(double[::1] vector1, double[::1] vector2):
+cdef double _hamming(double[::1] vector_a, double[::1] vector_b):
     cdef double distance = 0.0
-    cdef int dims = vector1.shape[0]
+    cdef int dims = vector_a.shape[0]
 
     cdef int i
 
     for i in range(0, dims):
-        if vector1[i] != vector2[i]:
+        if vector_a[i] != vector_b[i]:
             distance += 1.0
 
     return distance
@@ -228,20 +228,20 @@ cdef double[:, ::1] _hamming_pairwise(double[:, ::1] vectors_a, double[:, ::1] v
 # Chi-Square Distance #
 #######################
 
-def chisqr(double[::1] vectors_a, double[::1] vectors_b):
+def chisqr(double[::1] vector_a, double[::1] vector_b):
     """ Finds the chi-squared distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the chi-squared distance between the two supplied vectors.
 
     """
-    return _chisqr(vectors_a, vectors_b)
+    return _chisqr(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -327,20 +327,20 @@ cdef double[:, ::1] _chisqr_pairwise(double[:, ::1] vectors_a, double[:, ::1] ve
 # Cosine Distance #
 ###################
 
-def cosine(double[::1] vectors_a, double[::1] vectors_b):
+def cosine(double[::1] vector_a, double[::1] vector_b):
     """ Finds the cosine distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the cosine distance between the two supplied vectors.
 
     """
-    return _cosine(vectors_a, vectors_b)
+    return _cosine(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -427,20 +427,20 @@ cdef double[:, ::1] _cosine_pairwise(double[:, ::1] vectors_a, double[:, ::1] ve
 # Pearson Distance #
 ####################
 
-def pearson(double[::1] vectors_a, double[::1] vectors_b):
+def pearson(double[::1] vector_a, double[::1] vector_b):
     """ Finds the pearson distance between two vectors.
 
     This is a python wrapper for the cython implementation.
 
     Args:
-        vectors_a (ndarray): the first 1D array must be of type np.float
-        vectors_b (ndarray): the second 1D array must be of type np.float
+        vector_a (ndarray): the first 1D array must be of type np.float
+        vector_b (ndarray): the second 1D array must be of type np.float
 
     Returns:
         (np.float): the pearson distance between the two supplied vectors.
 
     """
-    return _pearson(vectors_a, vectors_b)
+    return _pearson(vector_a, vector_b)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
